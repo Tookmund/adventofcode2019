@@ -5,7 +5,11 @@ fn main() -> io::Result<()> {
     let mut total: i32 = 0;
     for line in io::stdin().lock().lines() {
         let massint = line?.parse::<i32>().unwrap();
-        total += getfuel(massint);
+        let mut newfuel = getfuel(massint);
+        while newfuel >= 0 {
+            total += newfuel;
+            newfuel = getfuel(newfuel);
+        }
     }
     println!("Total Fuel Required: {}", total);
     Ok(())
