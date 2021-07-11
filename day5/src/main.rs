@@ -1,12 +1,12 @@
 mod intcode;
 
 use std::io;
-use std::io::prelude::*;
 use intcode::*;
 
 
 fn main() {
-    let line = io::stdin().lock().lines().next().unwrap().unwrap();
-    let prog: IntCode = line.split(",").map(|s| s.parse::<Opcode>().unwrap()).collect();
-    println!("{:?}", prog);
+    let mut line = String::new();
+    io::stdin().read_line(&mut line).expect("Unable to read program from stdin!");
+    let mut prog: IntCode = line.split(",").map(|s| s.trim().parse::<Opcode>().unwrap()).collect();
+    prog.run();
 }

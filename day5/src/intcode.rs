@@ -1,6 +1,8 @@
 use std::convert::TryFrom;
 use std::iter::FromIterator;
 
+use std::io;
+
 pub type Opcode = i32;
 pub type OpcodeList = Vec<Opcode>;
 
@@ -65,7 +67,6 @@ impl IntCode {
     pub fn run(&mut self) -> &OpcodeList {
         while self.ip < self.mem.len() {
             let op = self.ip2op();
-            println!("Opcode: {:?}", op);
             match op {
                 OP::ADD => self.addop(),
                 OP::MULTIPLY => self.multop(),
@@ -83,7 +84,7 @@ impl IntCode {
         let op = self.mem[self.ip] % 100;
         match OP::try_from(op) {
             Ok(v) => v,
-            Err(_) => panic!("{} is not a valid opcode!", op)
+            Err(_) => panic!("{}: Invalid opcode {}!", self.ip, op)
         }
     }
 
@@ -92,6 +93,17 @@ impl IntCode {
         self.mem[self.ip] / 100
     }
 
+    fn getmode(&self, opmodes: Opcode, i: Opcode) -> MODE {
+        let mut mode = opmodes % (10*i);
+        if i > 1 {
+            mode /= 10 * (i-1);
+        }
+    
+        match MODE::try_from(mode) {
+            Ok(v) => v,
+            Err(_) => panic!("{}: Invalid mode {}!", self.ip, mode)
+        }
+    }
 
     fn getarg(&mut self, mode: MODE) -> Opcode {
         self.ip += 1;
@@ -108,7 +120,7 @@ impl IntCode {
         let pos = self.mem[self.ip];
         match usize::try_from(pos) {
             Ok(v) => v,
-            Err(_) => panic!("{} is an invalid position!", pos)
+            Err(_) => panic!("{}: Invalid position {}!", self.ip, pos)
         }
     }
 
@@ -120,39 +132,37 @@ impl IntCode {
 
     fn addop(&mut self) {
         let opmodes = self.ip2opmodes();
-        let add1 = self.getarg(getmode(opmodes, 1));
-        let add2 = self.getarg(getmode(opmodes, 2));
+        let add1 = self.getarg(self.getmode(opmodes, 1));
+        let add2 = self.getarg(self.getmode(opmodes, 2));
         self.setpos(add1 + add2);
     }
 
     fn multop(&mut self) {
         let opmodes = self.ip2opmodes();
-        let mult1 = self.getarg(getmode(opmodes, 1));
-        let mult2 = self.getarg(getmode(opmodes, 2));
+        let mult1 = self.getarg(self.getmode(opmodes, 1));
+        let mult2 = self.getarg(self.getmode(opmodes, 2));
         self.setpos(mult1 * mult2);
     }
 
     fn inputop(&mut self) {
-        // TODO
+        let mut input_str = String::new();
+        match io::stdin().read_line(&mut input_str) {
+            Ok(_) => (),
+            Err(_) => panic!("{}: Failed to read input!", self.ip),
+        };
+        let inputopcode: Opcode  = match input_str.trim().parse() {
+            Ok(v) => v,
+            Err(_) => panic!("{}: Invalid input number {}!", self.ip, input_str)
+        };
+        self.setpos(inputopcode);
     }
 
     fn outputop(&mut self) {
-        let val = self.getarg(getmode(self.ip2opmodes(), 1));
+        let val = self.getarg(self.getmode(self.ip2opmodes(), 1));
         println!("{}", val);
     }
 }
 
-fn getmode(opmodes: Opcode, i: Opcode) -> MODE {
-    let mut mode = opmodes % (10*i);
-    if i > 1 {
-        mode /= 10 * (i-1);
-    }
-
-    match MODE::try_from(mode) {
-        Ok(v) => v,
-        Err(_) => panic!("{} is not a valid mode!", mode)
-    }
-}
 
 impl FromIterator<Opcode> for IntCode {
     fn from_iter<I: IntoIterator<Item=Opcode>>(iter: I) -> Self {
