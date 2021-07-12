@@ -126,11 +126,8 @@ impl IntCode {
         self.getmem(self.ip) / 100
     }
 
-    fn getmode(&self, opmodes: Opcode, i: Opcode) -> MODE {
-        let mut mode = opmodes % (10*i);
-        if i > 1 {
-            mode /= 10 * (i-1);
-        }
+    fn getmode(&self, opmodes: Opcode, i: u32) -> MODE {
+        let mode = (opmodes % Opcode::pow(10, i)) / Opcode::pow(10, i-1);
     
         match MODE::try_from(mode) {
             Ok(v) => v,
@@ -143,30 +140,32 @@ impl IntCode {
         match mode {
             MODE::IMMEDIATE => self.getmem(self.ip),
             MODE::POSITION => {
-                let pos = self.getpos();
+                let pos = self.toposition(self.getmem(self.ip));
                 self.getmem(pos)
             },
             MODE::RELATIVE => {
-                let pos = self.rel + self.getmem(self.ip);
-                match usize::try_from(pos) {
-                    Ok(v) => self.getmem(v),
-                    Err(_) => panic!("{}: Invalid position {}!", self.ip, pos)
-                }
+                let relpos = self.rel + self.getmem(self.ip);
+                let pos = self.toposition(relpos);
+                self.getmem(pos)
             }
         }
     }
 
-    fn getpos(&self) -> usize {
-        let pos = self.getmem(self.ip);
+    fn toposition(&self, pos: Opcode) -> usize {
         match usize::try_from(pos) {
             Ok(v) => v,
             Err(_) => panic!("{}: Invalid position {}!", self.ip, pos)
         }
     }
 
-    fn setpos(&mut self, result: Opcode) {
+    fn setpos(&mut self, result: Opcode, mode: MODE) {
         self.ip += 1;
-        let pos = self.getpos();
+        let argpos = match mode {
+            MODE::POSITION => self.getmem(self.ip),
+            MODE::RELATIVE => self.getmem(self.ip) + self.rel,
+            MODE::IMMEDIATE => panic!("{}: Immediate mode invalid for set!", self.ip)
+        };
+        let pos = self.toposition(argpos);
         self.setmem(pos, result);
     }
 
@@ -174,14 +173,14 @@ impl IntCode {
         let opmodes = self.ip2opmodes();
         let add1 = self.getarg(self.getmode(opmodes, 1));
         let add2 = self.getarg(self.getmode(opmodes, 2));
-        self.setpos(add1 + add2);
+        self.setpos(add1 + add2, self.getmode(opmodes, 3));
     }
 
     fn multop(&mut self) {
         let opmodes = self.ip2opmodes();
         let mult1 = self.getarg(self.getmode(opmodes, 1));
         let mult2 = self.getarg(self.getmode(opmodes, 2));
-        self.setpos(mult1 * mult2);
+        self.setpos(mult1 * mult2, self.getmode(opmodes, 3));
     }
 
     fn inputop<R: io::BufRead>(&mut self, input: &mut R) {
@@ -190,11 +189,11 @@ impl IntCode {
             Ok(_) => (),
             Err(_) => panic!("{}: Failed to read input!", self.ip),
         };
-        let inputopcode: Opcode  = match input_str.trim().parse() {
+        let inputopcode: Opcode = match input_str.trim().parse() {
             Ok(v) => v,
             Err(_) => panic!("{}: Invalid input number {}!", self.ip, input_str)
         };
-        self.setpos(inputopcode);
+        self.setpos(inputopcode, self.getmode(self.ip2opmodes(), 1));
     }
 
     fn outputop<W: io::Write>(&mut self, output: &mut W) {
@@ -225,14 +224,14 @@ impl IntCode {
         let opmodes = self.ip2opmodes();
         let param1 = self.getarg(self.getmode(opmodes, 1));
         let param2 = self.getarg(self.getmode(opmodes, 2));
-        self.setpos(if param1 < param2 { 1 } else { 0 });
+        self.setpos(if param1 < param2 { 1 } else { 0 }, self.getmode(opmodes, 3));
     }
 
     fn equalop(&mut self) {
         let opmodes = self.ip2opmodes();
         let param1 = self.getarg(self.getmode(opmodes, 1));
         let param2 = self.getarg(self.getmode(opmodes, 2));
-        self.setpos(if param1 == param2 { 1 } else { 0 });
+        self.setpos(if param1 == param2 { 1 } else { 0 }, self.getmode(opmodes, 3));
     }
 
     fn relop(&mut self) {
