@@ -15,3 +15,8 @@ fn day9_16digit() {
 fn day9_large_number() {
     testprogram_io(vec![104,1125899906842624,99], None, None, Some(b"1125899906842624\n"))
 }
+
+#[test]
+fn day9_rel_base() {
+    testprogram_io(vec![3,1985, 109,2000, 109,19, 204,-34, 99], None, Some(b"1985"), Some(b"1985\n"))
+}
