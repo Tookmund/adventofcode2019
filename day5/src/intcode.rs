@@ -1,16 +1,11 @@
 use std::convert::TryFrom;
 use std::iter::FromIterator;
+use std::iter::Iterator;
 
 use std::io;
 
 pub type Opcode = i32;
 pub type OpcodeList = Vec<Opcode>;
-
-#[derive(Debug, Clone)]
-pub struct IntCode {
-    mem: OpcodeList,
-    ip: usize
-}
 
 #[derive(Debug)]
 enum OP {
@@ -18,6 +13,10 @@ enum OP {
     MULTIPLY,
     INPUT,
     OUTPUT,
+    JUMPTRUE,
+    JUMPFALSE,
+    LESS,
+    EQUAL,
     EXIT = 99
 }
 
@@ -26,7 +25,6 @@ enum MODE {
     POSITION = 0,
     IMMEDIATE 
 }
-
 
 // This needs a macro
 impl TryFrom<Opcode> for OP {
@@ -39,6 +37,10 @@ impl TryFrom<Opcode> for OP {
             x if x == OP::INPUT as Opcode => Ok(OP::INPUT),
             x if x == OP::OUTPUT as Opcode => Ok(OP::OUTPUT),
             x if x == OP::EXIT as Opcode => Ok(OP::EXIT),
+            x if x == OP::JUMPTRUE as Opcode => Ok(OP::JUMPTRUE),
+            x if x == OP::JUMPFALSE as Opcode => Ok(OP::JUMPFALSE),
+            x if x == OP::LESS as Opcode => Ok(OP::LESS),
+            x if x == OP::EQUAL as Opcode => Ok(OP::EQUAL),
             _ => Err(())
         }
     }
@@ -54,6 +56,12 @@ impl TryFrom<Opcode> for MODE {
             _ => Err(())
         }
     }
+}
+
+#[derive(Debug, Clone)]
+pub struct IntCode {
+    mem: OpcodeList,
+    ip: usize
 }
 
 impl IntCode {
@@ -72,6 +80,10 @@ impl IntCode {
                 OP::MULTIPLY => self.multop(),
                 OP::INPUT => self.inputop(),
                 OP::OUTPUT => self.outputop(),
+                OP::JUMPTRUE => self.jumpop(true),
+                OP::JUMPFALSE => self.jumpop(false),
+                OP::LESS => self.lessop(),
+                OP::EQUAL => self.equalop(),
                 OP::EXIT => break
             }
             self.ip += 1;
@@ -160,6 +172,35 @@ impl IntCode {
     fn outputop(&mut self) {
         let val = self.getarg(self.getmode(self.ip2opmodes(), 1));
         println!("{}", val);
+    }
+
+    fn jumpop(&mut self, jumptrue: bool) {
+        let opmodes = self.ip2opmodes();
+        let cond = self.getarg(self.getmode(opmodes, 1));
+        let loc = self.getarg(self.getmode(opmodes, 2));
+        // Only one is true
+        if jumptrue ^ (cond == 0) {
+            self.ip = match usize::try_from(loc) {
+                Ok(v) => v,
+                Err(_) => panic!("{}: Invalid jump location {}!", self.ip, loc)
+            };
+            // Automatically incremented at the end of the loop
+            self.ip -= 1;
+        }
+    }
+
+    fn lessop(&mut self) {
+        let opmodes = self.ip2opmodes();
+        let param1 = self.getarg(self.getmode(opmodes, 1));
+        let param2 = self.getarg(self.getmode(opmodes, 2));
+        self.setpos(if param1 < param2 { 1 } else { 0 });
+    }
+
+    fn equalop(&mut self) {
+        let opmodes = self.ip2opmodes();
+        let param1 = self.getarg(self.getmode(opmodes, 1));
+        let param2 = self.getarg(self.getmode(opmodes, 2));
+        self.setpos(if param1 == param2 { 1 } else { 0 });
     }
 }
 
