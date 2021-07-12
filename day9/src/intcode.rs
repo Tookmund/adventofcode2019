@@ -78,14 +78,14 @@ impl IntCode {
         }
     }
 
-    pub fn run(&mut self) -> &OpcodeList {
+    pub fn run<R: io::BufRead, W: io::Write>(&mut self, input: &mut R, output: &mut W) -> &OpcodeList {
         while self.ip < self.mem.len() {
             let op = self.ip2op();
             match op {
                 OP::ADD => self.addop(),
                 OP::MULTIPLY => self.multop(),
-                OP::INPUT => self.inputop(),
-                OP::OUTPUT => self.outputop(),
+                OP::INPUT => self.inputop(input),
+                OP::OUTPUT => self.outputop(output),
                 OP::JUMPTRUE => self.jumpop(true),
                 OP::JUMPFALSE => self.jumpop(false),
                 OP::LESS => self.lessop(),
@@ -184,9 +184,9 @@ impl IntCode {
         self.setpos(mult1 * mult2);
     }
 
-    fn inputop(&mut self) {
+    fn inputop<R: io::BufRead>(&mut self, input: &mut R) {
         let mut input_str = String::new();
-        match io::stdin().read_line(&mut input_str) {
+        match input.read_line(&mut input_str) {
             Ok(_) => (),
             Err(_) => panic!("{}: Failed to read input!", self.ip),
         };
@@ -197,9 +197,12 @@ impl IntCode {
         self.setpos(inputopcode);
     }
 
-    fn outputop(&mut self) {
+    fn outputop<W: io::Write>(&mut self, output: &mut W) {
         let val = self.getarg(self.getmode(self.ip2opmodes(), 1));
-        println!("{}", val);
+        match write!(output, "{}", val) {
+            Ok(_) => (),
+            Err(_) => panic!("{}: Unable to write to provided output!", self.ip)
+        }
     }
 
     fn jumpop(&mut self, jumptrue: bool) {
@@ -266,7 +269,7 @@ mod day2tests {
         result.iter().enumerate().for_each(|(i, v)| {
             hashresult.insert(i, *v);
         });
-        assert_eq!(*prog.run(), hashresult);
+        assert_eq!(*prog.run(&mut io::stdin().lock(), &mut io::stdout()), hashresult);
     }
 
     #[test]
