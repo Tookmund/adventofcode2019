@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
 use std::iter::FromIterator;
-use std::iter::Iterator;
 
 use std::io;
 
