@@ -30,6 +30,7 @@ pub fn testprogram_io(startprog: Vec<Opcode>, expectedresult: Option<Vec<Opcode>
     };
 }
 
+#[allow(dead_code)]
 pub fn testprogram(startprog: Vec<Opcode>, result: Vec<Opcode>) {
     testprogram_io(startprog, Some(result), None, None);
 }
