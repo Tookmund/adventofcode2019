@@ -17,7 +17,7 @@ enum OP {
     JUMPFALSE,
     LESS,
     EQUAL,
-    RELATIVE,
+    RELATIVEBASE,
     EXIT = 99
 }
 
@@ -43,7 +43,7 @@ impl TryFrom<Opcode> for OP {
             x if x == OP::JUMPFALSE as Opcode => Ok(OP::JUMPFALSE),
             x if x == OP::LESS as Opcode => Ok(OP::LESS),
             x if x == OP::EQUAL as Opcode => Ok(OP::EQUAL),
-            x if x == OP::RELATIVE as Opcode => Ok(OP::RELATIVE),
+            x if x == OP::RELATIVEBASE as Opcode => Ok(OP::RELATIVEBASE),
             _ => Err(())
         }
     }
@@ -90,7 +90,7 @@ impl IntCode {
                 OP::JUMPFALSE => self.jumpop(false),
                 OP::LESS => self.lessop(),
                 OP::EQUAL => self.equalop(),
-                OP::RELATIVE => self.relop(),
+                OP::RELATIVEBASE => self.relop(),
                 OP::EXIT => break
             };
             match op {
