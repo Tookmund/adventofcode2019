@@ -199,7 +199,7 @@ impl IntCode {
 
     fn outputop<W: io::Write>(&mut self, output: &mut W) {
         let val = self.getarg(self.getmode(self.ip2opmodes(), 1));
-        match write!(output, "{}", val) {
+        match writeln!(output, "{}", val) {
             Ok(_) => (),
             Err(_) => panic!("{}: Unable to write to provided output!", self.ip)
         }
