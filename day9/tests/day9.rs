@@ -20,3 +20,8 @@ fn day9_large_number() {
 fn day9_rel_base() {
     testprogram_io(vec![3,1985, 109,2000, 109,19, 204,-34, 99], None, Some(b"1985"), Some(b"1985\n"))
 }
+
+#[test]
+fn day9_rel_base_add() {
+    testprogram_io(vec![109,4, 2101,30,-3,0, 99], Some(vec![34,4,2101,30,-3,0,99]), None, None)
+}
