@@ -1,17 +1,5 @@
-#[path = "../src/intcode.rs"]
-mod intcode;
-use intcode::*;
-
-use std::io;
-
-fn testprogram(startprog: Vec<Opcode>, result: Vec<Opcode>) {
-    let mut prog: IntCode = startprog.iter().collect();
-    let mut hashresult = OpcodeList::new();
-    result.iter().enumerate().for_each(|(i, v)| {
-        hashresult.insert(i, *v);
-    });
-    assert_eq!(*prog.run(&mut io::stdin().lock(), &mut io::stdout()), hashresult);
-}
+mod common;
+use common::*;
 
 #[test]
 fn day2_part1_1() {
