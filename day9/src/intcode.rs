@@ -216,6 +216,9 @@ impl IntCode {
                 Err(_) => panic!("{}: Invalid jump location {}!", self.ip, loc)
             };
         }
+        else {
+            self.ip += 1;
+        }
     }
 
     fn lessop(&mut self) {
