@@ -92,8 +92,11 @@ impl IntCode {
                 OP::EQUAL => self.equalop(),
                 OP::RELATIVE => self.relop(),
                 OP::EXIT => break
+            };
+            match op {
+                OP::JUMPTRUE | OP::JUMPFALSE => (),
+                _ => self.ip += 1
             }
-            self.ip += 1;
         }
         &self.mem
     }
@@ -209,8 +212,6 @@ impl IntCode {
                 Ok(v) => v,
                 Err(_) => panic!("{}: Invalid jump location {}!", self.ip, loc)
             };
-            // Automatically incremented at the end of the loop
-            self.ip -= 1;
         }
     }
 
