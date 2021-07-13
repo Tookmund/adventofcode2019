@@ -6,7 +6,12 @@ pub use std::io;
 
 type TestIO<'a> = &'a [u8];
 
-pub fn testprogram_io(startprog: Vec<Opcode>, expectedresult: Option<Vec<Opcode>>, input: Option<TestIO>, expectedout: Option<TestIO>) {
+pub fn testprogram_io(
+    startprog: Vec<Opcode>,
+    expectedresult: Option<Vec<Opcode>>,
+    input: Option<TestIO>,
+    expectedout: Option<TestIO>,
+) {
     let mut prog: IntCode = startprog.iter().collect();
     let mut output: Vec<u8> = Vec::new();
 
@@ -20,13 +25,13 @@ pub fn testprogram_io(startprog: Vec<Opcode>, expectedresult: Option<Vec<Opcode>
                 hashexpected.insert(i, *v);
             });
             assert_eq!(*result, hashexpected);
-        },
-        None => ()
+        }
+        None => (),
     }
 
     match expectedout {
         Some(v) => assert_eq!(*output, *v),
-        None => println!("{}", String::from_utf8_lossy(&output))
+        None => println!("{}", String::from_utf8_lossy(&output)),
     };
 }
 

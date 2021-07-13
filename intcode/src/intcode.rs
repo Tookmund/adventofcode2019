@@ -1,6 +1,6 @@
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::iter::FromIterator;
-use std::collections::HashMap;
 
 use std::io;
 
@@ -18,14 +18,14 @@ enum OP {
     Less,
     Equal,
     RelativeBase,
-    Exit = 99
+    Exit = 99,
 }
 
 #[derive(Debug)]
 enum MODE {
     Position = 0,
     Immediate,
-    Relative 
+    Relative,
 }
 
 // This needs a macro
@@ -44,7 +44,7 @@ impl TryFrom<Opcode> for OP {
             x if x == OP::Less as Opcode => Ok(OP::Less),
             x if x == OP::Equal as Opcode => Ok(OP::Equal),
             x if x == OP::RelativeBase as Opcode => Ok(OP::RelativeBase),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
@@ -57,7 +57,7 @@ impl TryFrom<Opcode> for MODE {
             x if x == MODE::Position as Opcode => Ok(MODE::Position),
             x if x == MODE::Immediate as Opcode => Ok(MODE::Immediate),
             x if x == MODE::Relative as Opcode => Ok(MODE::Relative),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
@@ -66,7 +66,7 @@ impl TryFrom<Opcode> for MODE {
 pub struct IntCode {
     mem: OpcodeList,
     ip: usize,
-    rel: Opcode
+    rel: Opcode,
 }
 
 impl IntCode {
@@ -74,11 +74,15 @@ impl IntCode {
         IntCode {
             mem: OpcodeList::new(),
             ip: 0,
-            rel: 0
+            rel: 0,
         }
     }
 
-    pub fn run<R: io::BufRead, W: io::Write>(&mut self, input: &mut R, output: &mut W) -> &OpcodeList {
+    pub fn run<R: io::BufRead, W: io::Write>(
+        &mut self,
+        input: &mut R,
+        output: &mut W,
+    ) -> &OpcodeList {
         while self.ip < self.mem.len() {
             let op = self.ip2op();
             match op {
@@ -91,11 +95,11 @@ impl IntCode {
                 OP::Less => self.lessop(),
                 OP::Equal => self.equalop(),
                 OP::RelativeBase => self.relop(),
-                OP::Exit => break
+                OP::Exit => break,
             };
             match op {
                 OP::JumpTrue | OP::JumpFalse => (),
-                _ => self.ip += 1
+                _ => self.ip += 1,
             }
         }
         &self.mem
@@ -104,7 +108,7 @@ impl IntCode {
     fn getmem(&self, loc: usize) -> Opcode {
         match self.mem.get(&loc) {
             Some(v) => *v,
-            None => 0
+            None => 0,
         }
     }
 
@@ -117,7 +121,7 @@ impl IntCode {
         let op = self.getmem(self.ip) % 100;
         match OP::try_from(op) {
             Ok(v) => v,
-            Err(_) => panic!("{}: Invalid opcode {}!", self.ip, op)
+            Err(_) => panic!("{}: Invalid opcode {}!", self.ip, op),
         }
     }
 
@@ -127,11 +131,11 @@ impl IntCode {
     }
 
     fn getmode(&self, opmodes: Opcode, i: u32) -> MODE {
-        let mode = (opmodes % Opcode::pow(10, i)) / Opcode::pow(10, i-1);
-    
+        let mode = (opmodes % Opcode::pow(10, i)) / Opcode::pow(10, i - 1);
+
         match MODE::try_from(mode) {
             Ok(v) => v,
-            Err(_) => panic!("{}: Invalid mode {}!", self.ip, mode)
+            Err(_) => panic!("{}: Invalid mode {}!", self.ip, mode),
         }
     }
 
@@ -142,7 +146,7 @@ impl IntCode {
             MODE::Position => {
                 let pos = self.toposition(self.getmem(self.ip));
                 self.getmem(pos)
-            },
+            }
             MODE::Relative => {
                 let relpos = self.rel + self.getmem(self.ip);
                 let pos = self.toposition(relpos);
@@ -154,7 +158,7 @@ impl IntCode {
     fn toposition(&self, pos: Opcode) -> usize {
         match usize::try_from(pos) {
             Ok(v) => v,
-            Err(_) => panic!("{}: Invalid position {}!", self.ip, pos)
+            Err(_) => panic!("{}: Invalid position {}!", self.ip, pos),
         }
     }
 
@@ -163,7 +167,7 @@ impl IntCode {
         let argpos = match mode {
             MODE::Position => self.getmem(self.ip),
             MODE::Relative => self.getmem(self.ip) + self.rel,
-            MODE::Immediate => panic!("{}: Immediate mode invalid for set!", self.ip)
+            MODE::Immediate => panic!("{}: Immediate mode invalid for set!", self.ip),
         };
         let pos = self.toposition(argpos);
         self.setmem(pos, result);
@@ -191,7 +195,7 @@ impl IntCode {
         };
         let inputopcode: Opcode = match input_str.trim().parse() {
             Ok(v) => v,
-            Err(_) => panic!("{}: Invalid input number {}!", self.ip, input_str)
+            Err(_) => panic!("{}: Invalid input number {}!", self.ip, input_str),
         };
         self.setpos(inputopcode, self.getmode(self.ip2opmodes(), 1));
     }
@@ -200,7 +204,7 @@ impl IntCode {
         let val = self.getarg(self.getmode(self.ip2opmodes(), 1));
         match writeln!(output, "{}", val) {
             Ok(_) => (),
-            Err(_) => panic!("{}: Unable to write to provided output!", self.ip)
+            Err(_) => panic!("{}: Unable to write to provided output!", self.ip),
         }
     }
 
@@ -212,10 +216,9 @@ impl IntCode {
         if jumptrue ^ (cond == 0) {
             self.ip = match usize::try_from(loc) {
                 Ok(v) => v,
-                Err(_) => panic!("{}: Invalid jump location {}!", self.ip, loc)
+                Err(_) => panic!("{}: Invalid jump location {}!", self.ip, loc),
             };
-        }
-        else {
+        } else {
             self.ip += 1;
         }
     }
@@ -224,14 +227,20 @@ impl IntCode {
         let opmodes = self.ip2opmodes();
         let param1 = self.getarg(self.getmode(opmodes, 1));
         let param2 = self.getarg(self.getmode(opmodes, 2));
-        self.setpos(if param1 < param2 { 1 } else { 0 }, self.getmode(opmodes, 3));
+        self.setpos(
+            if param1 < param2 { 1 } else { 0 },
+            self.getmode(opmodes, 3),
+        );
     }
 
     fn equalop(&mut self) {
         let opmodes = self.ip2opmodes();
         let param1 = self.getarg(self.getmode(opmodes, 1));
         let param2 = self.getarg(self.getmode(opmodes, 2));
-        self.setpos(if param1 == param2 { 1 } else { 0 }, self.getmode(opmodes, 3));
+        self.setpos(
+            if param1 == param2 { 1 } else { 0 },
+            self.getmode(opmodes, 3),
+        );
     }
 
     fn relop(&mut self) {
@@ -240,9 +249,8 @@ impl IntCode {
     }
 }
 
-
 impl FromIterator<Opcode> for IntCode {
-    fn from_iter<I: IntoIterator<Item=Opcode>>(iter: I) -> Self {
+    fn from_iter<I: IntoIterator<Item = Opcode>>(iter: I) -> Self {
         let mut intcode = IntCode::new();
         iter.into_iter().enumerate().for_each(|(i, v)| {
             intcode.mem.insert(i, v);
@@ -252,7 +260,7 @@ impl FromIterator<Opcode> for IntCode {
 }
 
 impl<'a> FromIterator<&'a Opcode> for IntCode {
-    fn from_iter<I: IntoIterator<Item=&'a Opcode>>(iter: I) -> Self {
+    fn from_iter<I: IntoIterator<Item = &'a Opcode>>(iter: I) -> Self {
         let mut intcode = IntCode::new();
         iter.into_iter().enumerate().for_each(|(i, v)| {
             intcode.mem.insert(i, *v);
