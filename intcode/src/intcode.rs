@@ -9,23 +9,23 @@ pub type OpcodeList = HashMap<usize, Opcode>;
 
 #[derive(Debug)]
 enum OP {
-    ADD = 1,
-    MULTIPLY,
-    INPUT,
-    OUTPUT,
-    JUMPTRUE,
-    JUMPFALSE,
-    LESS,
-    EQUAL,
-    RELATIVEBASE,
-    EXIT = 99
+    Add = 1,
+    Multiply,
+    Input,
+    Output,
+    JumpTrue,
+    JumpFalse,
+    Less,
+    Equal,
+    RelativeBase,
+    Exit = 99
 }
 
 #[derive(Debug)]
 enum MODE {
-    POSITION = 0,
-    IMMEDIATE,
-    RELATIVE 
+    Position = 0,
+    Immediate,
+    Relative 
 }
 
 // This needs a macro
@@ -34,16 +34,16 @@ impl TryFrom<Opcode> for OP {
 
     fn try_from(val: Opcode) -> Result<Self, Self::Error> {
         match val {
-            x if x == OP::ADD as Opcode => Ok(OP::ADD),
-            x if x == OP::MULTIPLY as Opcode => Ok(OP::MULTIPLY),
-            x if x == OP::INPUT as Opcode => Ok(OP::INPUT),
-            x if x == OP::OUTPUT as Opcode => Ok(OP::OUTPUT),
-            x if x == OP::EXIT as Opcode => Ok(OP::EXIT),
-            x if x == OP::JUMPTRUE as Opcode => Ok(OP::JUMPTRUE),
-            x if x == OP::JUMPFALSE as Opcode => Ok(OP::JUMPFALSE),
-            x if x == OP::LESS as Opcode => Ok(OP::LESS),
-            x if x == OP::EQUAL as Opcode => Ok(OP::EQUAL),
-            x if x == OP::RELATIVEBASE as Opcode => Ok(OP::RELATIVEBASE),
+            x if x == OP::Add as Opcode => Ok(OP::Add),
+            x if x == OP::Multiply as Opcode => Ok(OP::Multiply),
+            x if x == OP::Input as Opcode => Ok(OP::Input),
+            x if x == OP::Output as Opcode => Ok(OP::Output),
+            x if x == OP::Exit as Opcode => Ok(OP::Exit),
+            x if x == OP::JumpTrue as Opcode => Ok(OP::JumpTrue),
+            x if x == OP::JumpFalse as Opcode => Ok(OP::JumpFalse),
+            x if x == OP::Less as Opcode => Ok(OP::Less),
+            x if x == OP::Equal as Opcode => Ok(OP::Equal),
+            x if x == OP::RelativeBase as Opcode => Ok(OP::RelativeBase),
             _ => Err(())
         }
     }
@@ -54,9 +54,9 @@ impl TryFrom<Opcode> for MODE {
 
     fn try_from(val: Opcode) -> Result<Self, Self::Error> {
         match val {
-            x if x == MODE::POSITION as Opcode => Ok(MODE::POSITION),
-            x if x == MODE::IMMEDIATE as Opcode => Ok(MODE::IMMEDIATE),
-            x if x == MODE::RELATIVE as Opcode => Ok(MODE::RELATIVE),
+            x if x == MODE::Position as Opcode => Ok(MODE::Position),
+            x if x == MODE::Immediate as Opcode => Ok(MODE::Immediate),
+            x if x == MODE::Relative as Opcode => Ok(MODE::Relative),
             _ => Err(())
         }
     }
@@ -82,19 +82,19 @@ impl IntCode {
         while self.ip < self.mem.len() {
             let op = self.ip2op();
             match op {
-                OP::ADD => self.addop(),
-                OP::MULTIPLY => self.multop(),
-                OP::INPUT => self.inputop(input),
-                OP::OUTPUT => self.outputop(output),
-                OP::JUMPTRUE => self.jumpop(true),
-                OP::JUMPFALSE => self.jumpop(false),
-                OP::LESS => self.lessop(),
-                OP::EQUAL => self.equalop(),
-                OP::RELATIVEBASE => self.relop(),
-                OP::EXIT => break
+                OP::Add => self.addop(),
+                OP::Multiply => self.multop(),
+                OP::Input => self.inputop(input),
+                OP::Output => self.outputop(output),
+                OP::JumpTrue => self.jumpop(true),
+                OP::JumpFalse => self.jumpop(false),
+                OP::Less => self.lessop(),
+                OP::Equal => self.equalop(),
+                OP::RelativeBase => self.relop(),
+                OP::Exit => break
             };
             match op {
-                OP::JUMPTRUE | OP::JUMPFALSE => (),
+                OP::JumpTrue | OP::JumpFalse => (),
                 _ => self.ip += 1
             }
         }
@@ -138,12 +138,12 @@ impl IntCode {
     fn getarg(&mut self, mode: MODE) -> Opcode {
         self.ip += 1;
         match mode {
-            MODE::IMMEDIATE => self.getmem(self.ip),
-            MODE::POSITION => {
+            MODE::Immediate => self.getmem(self.ip),
+            MODE::Position => {
                 let pos = self.toposition(self.getmem(self.ip));
                 self.getmem(pos)
             },
-            MODE::RELATIVE => {
+            MODE::Relative => {
                 let relpos = self.rel + self.getmem(self.ip);
                 let pos = self.toposition(relpos);
                 self.getmem(pos)
@@ -161,9 +161,9 @@ impl IntCode {
     fn setpos(&mut self, result: Opcode, mode: MODE) {
         self.ip += 1;
         let argpos = match mode {
-            MODE::POSITION => self.getmem(self.ip),
-            MODE::RELATIVE => self.getmem(self.ip) + self.rel,
-            MODE::IMMEDIATE => panic!("{}: Immediate mode invalid for set!", self.ip)
+            MODE::Position => self.getmem(self.ip),
+            MODE::Relative => self.getmem(self.ip) + self.rel,
+            MODE::Immediate => panic!("{}: Immediate mode invalid for set!", self.ip)
         };
         let pos = self.toposition(argpos);
         self.setmem(pos, result);
